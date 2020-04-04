@@ -20,13 +20,13 @@ from ...core import OrderedDict
 from ...core.options import CallbackError
 from ...core.util import dimension_sanitizer, isscalar, dt64_to_dt
 from ...element import Table
-from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
-                        RangeY, PointerX, PointerY, BoundsX, BoundsY,
-                        Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
-                        PressUp, PanEnd,
-                        PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
-                        PointDraw, PolyDraw, PolyEdit, CDSStream,
-                        FreehandDraw, CurveEdit, SelectionXY)
+from ...streams import (
+    Stream, PointerXY, RangeXY, Selection1D, RangeX, RangeY, PointerX,
+    PointerY, BoundsX, BoundsY, Tap, SingleTap, DoubleTap, MouseEnter,
+    MouseLeave, PressUp, PanEnd, PlotSize, Draw, BoundsXY, PlotReset,
+    BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
+    CurveEdit, SelectionXY, Lasso,
+)
 from ..links import Link, RectanglesTableLink, DataLink, RangeToolLink, SelectionLink, VertexTableLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import convert_timestamp
@@ -984,6 +984,27 @@ class BoundsYCallback(Callback):
             return {}
 
 
+class LassoCallback(Callback):
+
+    attributes = {'xs': 'cb_obj.geometry.x', 'ys': 'cb_obj.geometry.y'}
+    models = ['plot']
+    extra_models = ['lasso_select']
+    on_events = ['selectiongeometry']
+    skip = ["(cb_obj.geometry.type != 'poly') || (!cb_obj.final)"]
+
+    def _process_msg(self, msg):
+        if not all(c in msg for c in ('xs', 'ys')):
+            return {}
+        xs, ys = msg['xs'], msg['ys']
+        if isinstance(xs, dict):
+            xs = ((int(i), x) for i, x in xs.items())
+            xs = [x for _, x in sorted(xs)]
+        if isinstance(ys, dict):
+            ys = ((int(i), y) for i, y in ys.items())
+            ys = [y for _, y in sorted(ys)]
+        return {'geometry': np.column_stack([xs, ys])}
+
+
 class Selection1DCallback(Callback):
     """
     Returns the current selection on a ColumnDataSource.
@@ -1331,6 +1352,7 @@ callbacks[RangeY]      = RangeYCallback
 callbacks[BoundsXY]    = BoundsCallback
 callbacks[BoundsX]     = BoundsXCallback
 callbacks[BoundsY]     = BoundsYCallback
+callbacks[Lasso]       = LassoCallback
 callbacks[Selection1D] = Selection1DCallback
 callbacks[PlotSize]    = PlotSizeCallback
 callbacks[SelectionXY] = SelectionXYCallback
