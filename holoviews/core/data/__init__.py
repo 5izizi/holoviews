@@ -347,6 +347,8 @@ class Dataset(Element):
         if input_pipeline is None:
             input_pipeline = chain_op.instance()
 
+        kwargs['kdims'] = self.kdims
+        kwargs['vdims'] = self.vdims
         init_op = factory.instance(
             output_type=type(self),
             args=[],
@@ -1149,6 +1151,9 @@ argument to specify a selection specification""")
 
             if 'pipeline' not in overrides:
                 overrides['pipeline'] = self._pipeline
+
+            if 'transforms' not in overrides:
+                overrides['transforms'] = self._transforms
         elif self._in_method:
             if 'dataset' not in overrides:
                 overrides['dataset'] = self.dataset
