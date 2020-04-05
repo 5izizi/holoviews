@@ -141,6 +141,7 @@ class Operation(param.ParameterizedFunction):
                     self.instance(**self.p)
                 ],
             )
+            ret._transforms = element._transforms
         return ret
 
 
